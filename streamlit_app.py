@@ -58,7 +58,7 @@ if st.session_state.end_cell:
     # Calculate how many wells will be populated based on the selected wells
     total_cells = len(selected_data)
 
-    # Append i5 values based on the i5 row selection
+    # Append i5 and i7 values based on the user selections
     for i in range(total_cells):
         well = selected_data[i]
         well_row = well[0]  # Extract the letter (A, B, C, etc.)
@@ -84,12 +84,40 @@ if st.session_state.end_cell:
     # Create a DataFrame from the output data
     output_df = pd.DataFrame(output_data)
 
-        # Display the DataFrame in horizontal format
+    # Display the DataFrame in horizontal format
     st.subheader("→ Horizontal Output")
     st.write(output_df)
 
+    # Create a DataFrame for vertical output with the specified order
+    vertical_output_data = []
+    rows = [f"{chr(65 + r)}{c + 1}" for c in range(12) for r in range(8)]
+    
+    # Populate the vertical output data using the same logic
+    for well in rows:
+        if well in selected_data:
+            well_row = well[0]
+            well_number = int(well[1:])
+            
+            # Fetch the corresponding i5 value from the index
+            i5_value = f"{i5_row}{well_number}"
+            i5_row_data = index_df.loc[index_df['index'] == i5_value, ['i5-name', 'i5-index']].values[0]
+            
+            # Fetch the corresponding i7 value from the index
+            i7_value = f"{well_row}{i7_col}"
+            i7_row_data = index_df.loc[index_df['index'] == i7_value, ['i7-name', 'i7-index']].values[0]
+            
+            # Append to vertical output data
+            vertical_output_data.append({
+                "Well": well,
+                "i5-name": i5_row_data[0],
+                "i5-index": i5_row_data[1],
+                "i7-name": i7_row_data[0],
+                "i7-index": i7_row_data[1]
+            })
+
+    # Create a DataFrame for vertical output
+    vertical_output_df = pd.DataFrame(vertical_output_data)
+
     # Display the DataFrame in vertical format
     st.subheader("↓ Vertical Output")
-    vertical_output_df = output_df.melt(id_vars=["Well"], var_name='Data Type', value_name='Value')
     st.write(vertical_output_df)
-
