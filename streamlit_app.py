@@ -78,8 +78,8 @@ if st.session_state.end_cell:
 
     # Dropdowns for i5 and i7 selections
     st.subheader("Select i5 Row and i7 Column")
-    i5_row = st.selectbox("Select i5 Row", ["A", "B", "C", "D", "E", "F", "G", "H"])
     i7_col = st.selectbox("Select i7 Column", list(range(1, 13)))
+    i5_row = st.selectbox("Select i5 Row", ["A", "B", "C", "D", "E", "F", "G", "H"])
 
     # Prepare the DataFrame to hold the output data
     output_data = []
