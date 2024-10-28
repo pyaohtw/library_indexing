@@ -1,6 +1,5 @@
-import streamlit as st 
+import streamlit as st
 import pandas as pd
-import datetime
 
 # Load the index data from the CSV file
 index_df = pd.read_csv('index.csv')
@@ -8,21 +7,6 @@ index_df = pd.read_csv('index.csv')
 # Create a sample dataframe for well structure (8 rows x 12 columns)
 data = [[f'{chr(65 + row)}{col + 1}' for col in range(12)] for row in range(8)]
 df = pd.DataFrame(data, columns=[f'A{i + 1}' for i in range(12)])
-
-# Apply CSS styling for cell buttons
-st.markdown(
-    """
-    <style>
-    .stButton button {
-        width: 60px;
-        height: 50px;
-        text-align: center;
-        vertical-align: middle;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 
 # Initialize session state for user selections
 if 'end_cell' not in st.session_state:
@@ -36,7 +20,7 @@ if 'i7_col' not in st.session_state:
 def get_selection(end_cell):
     row_index = ord(end_cell[0]) - 65  # Convert letter to row index (A=0, B=1, ..., H=7)
     col_index = int(end_cell[1:]) - 1   # Convert column number to index (1=0, 2=1, ..., 12=11)
-    
+
     # Create a selection up to the end cell
     selection = []
     for r in range(row_index + 1):
@@ -60,21 +44,8 @@ for i in range(df.shape[0]):
 # Check if an end cell has been selected
 if st.session_state.end_cell:
     st.subheader("Selected Data")
-    selected_data = get_selection(st.session_state.end_cell)
 
-    # Display entire matrix with highlighted selected range
-    styled_matrix = df.copy()
-    for i in range(df.shape[0]):
-        for j in range(df.shape[1]):
-            cell_value = df.iloc[i, j]
-            # Highlight the cells within the selected range
-            if cell_value in selected_data:
-                styled_matrix.iloc[i, j] = f'<span style="background-color:yellow; font-weight:bold; color:black;">{cell_value}</span>'
-            else:
-                styled_matrix.iloc[i, j] = f'<span>{cell_value}</span>'
-                
-    # Display the styled matrix with HTML
-    st.markdown(styled_matrix.to_html(escape=False, index=False, header=False), unsafe_allow_html=True)
+    selected_data = get_selection(st.session_state.end_cell)
 
     # Dropdowns for i5 and i7 selections
     st.subheader("Select i5 Row and i7 Column")
@@ -113,16 +84,6 @@ if st.session_state.end_cell:
     # Create a DataFrame from the output data
     output_df = pd.DataFrame(output_data)
 
-    # Generate timestamp in the format day_month_year_min_sec
-    timestamp = datetime.datetime.now().strftime("%D_%M%S")
-
-    # Add download button for the horizontal output
-    st.download_button(
-        label="Download Horizontal Output as CSV",
-        data=output_df.to_csv(index=False),
-        file_name=f"horizontal_output_{timestamp}.csv",
-        mime="text/csv"
-    )
     # Display the DataFrame in horizontal format
     st.subheader("→ Horizontal Output")
     st.write(output_df)
@@ -156,14 +117,6 @@ if st.session_state.end_cell:
 
     # Create a DataFrame for vertical output
     vertical_output_df = pd.DataFrame(vertical_output_data)
-    
-    # Add download button for the vertical output
-    st.download_button(
-        label="Download Vertical Output as CSV",
-        data=vertical_output_df.to_csv(index=False),
-        file_name=f"vertical_output_{timestamp}.csv",
-        mime="text/csv"
-    )
 
     # Display the DataFrame in vertical format
     st.subheader("↓ Vertical Output")
