@@ -23,7 +23,7 @@ st.markdown(
 
     /* Increase the width of the sidebar */
     .css-1d391kg {
-        width: 400px !important;  /* Adjust sidebar width as needed */
+        width: 600px !important;  /* Adjust sidebar width as needed */
     }
 
     /* Adjust the matrix width inside the sidebar with small left margin */
