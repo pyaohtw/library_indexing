@@ -13,11 +13,30 @@ df = pd.DataFrame(data, columns=[f'A{i + 1}' for i in range(12)])
 st.markdown(
     """
     <style>
+    /* Styling for cell buttons */
     .stButton button {
         width: 60px;
-        height: 50px;
+        height: 40px;
         text-align: center;
         vertical-align: middle;
+    }
+
+    /* Increase the width of the sidebar */
+    .css-1d391kg {
+        width: 400px !important;  /* Adjust sidebar width as needed */
+    }
+
+    /* Adjust the matrix width inside the sidebar with small left margin */
+    #matrix-container {
+        max-width: 400px !important;  /* Adjust this value as needed for the matrix in sidebar */
+        margin-left: 10px;  /* Set a small left margin */
+        margin-right: auto;
+    }
+
+    /* Make the font smaller in the matrix to fit the sidebar */
+    #matrix-container td, #matrix-container th {
+        font-size: 22px !important;  /* Adjust the font size to make it smaller */
+        padding: 5px;  /* Optional: Reduce padding to save space */
     }
     </style>
     """,
@@ -31,6 +50,8 @@ if 'i5_row' not in st.session_state:
     st.session_state.i5_row = None
 if 'i7_col' not in st.session_state:
     st.session_state.i7_col = None
+if 'removal_wells' not in st.session_state:
+    st.session_state.removal_wells = []
 
 # Function to get the selection based on the end cell
 def get_selection(end_cell):
@@ -45,7 +66,10 @@ def get_selection(end_cell):
     return selection
 
 # Streamlit app layout
-st.title("Interactive Cell Selector")
+st.title("App Summary")
+st.write("This app is designed to assign i7 and i5 indices to your samples in a 96-well format.")
+st.title("Well Selector")
+st.write("Select a well to generate a matrix from A1 to the selected well.")
 
 # Create buttons for each cell in a grid format
 for i in range(df.shape[0]):
@@ -59,49 +83,68 @@ for i in range(df.shape[0]):
 
 # Check if an end cell has been selected
 if st.session_state.end_cell:
-    st.subheader("Selected Data")
-    selected_data = get_selection(st.session_state.end_cell)
+    selected_data = get_selection(st.session_state.end_cell)  # Ensure selected_data is defined
 
-    # Display entire matrix with highlighted selected range
-    styled_matrix = df.copy()
+# Remove Wells from Output (Multiple Selection)
+st.title("Remove Wells from Output")
+st.write("Select wells to remove from the output. If you make an unintended removal, you can refresh the page and start over.")
+
+for i in range(df.shape[0]):
+    cols = st.columns(df.shape[1], gap="small")
+    for j in range(df.shape[1]):
+        cell_value = df.iloc[i, j]
+        if cell_value not in st.session_state.removal_wells:
+            if cols[j].button(cell_value, key=f"remove_{cell_value}", help=f"Remove {cell_value}"):
+                st.session_state.removal_wells.append(cell_value)  # Add to removal list
+        else:
+            cols[j].markdown(f"""
+                <div style="color: red; font-weight: bold; display: flex; justify-content: center; align-items: center; height: 100%; width: 100%; text-align: center;">
+                    {cell_value}
+                </div>
+            """, unsafe_allow_html=True)
+
+# In your sidebar, wrap the matrix display in a div with id="matrix-container"
+with st.sidebar:
+    st.title("Final Selected Data Matrix")
+    final_matrix = df.copy()
+
+    # Exclude the wells marked for removal from the display
     for i in range(df.shape[0]):
         for j in range(df.shape[1]):
             cell_value = df.iloc[i, j]
-            # Highlight the cells within the selected range
-            if cell_value in selected_data:
-                styled_matrix.iloc[i, j] = f'<span style="background-color:yellow; font-weight:bold; color:black;">{cell_value}</span>'
+            if cell_value in st.session_state.removal_wells:
+                final_matrix.iloc[i, j] = ''  # Clear out removed wells
+            elif cell_value in selected_data:
+                final_matrix.iloc[i, j] = f'<span style="background-color:yellow; font-weight:bold; color:black;">{cell_value}</span>'
             else:
-                styled_matrix.iloc[i, j] = f'<span>{cell_value}</span>'
-                
-    # Display the styled matrix with HTML
-    st.markdown(styled_matrix.to_html(escape=False, index=False, header=False), unsafe_allow_html=True)
+                final_matrix.iloc[i, j] = f'<span>{cell_value}</span>'
 
-    # Dropdowns for i5 and i7 selections
-    st.subheader("Select i5 Row and i7 Column")
-    i7_col = st.selectbox("Select i7 Column", list(range(1, 13)))
-    i5_row = st.selectbox("Select i5 Row", ["A", "B", "C", "D", "E", "F", "G", "H"])
+    # Wrap the matrix in a div with id="matrix-container"
+    st.markdown(f'<div id="matrix-container">{final_matrix.to_html(escape=False, index=False, header=False)}</div>', unsafe_allow_html=True)
 
-    # Prepare the DataFrame to hold the output data
-    output_data = []
+# Dropdowns for i5 and i7 selections
+st.subheader("Select i7 Column and i5 Row")
+i7_col = st.selectbox("Select i7 Column", list(range(1, 13)))
+i5_row = st.selectbox("Select i5 Row", ["A", "B", "C", "D", "E", "F", "G", "H"])
 
-    # Calculate how many wells will be populated based on the selected wells
-    total_cells = len(selected_data)
+# Create a DataFrame for horizontal output
+output_data = []
 
-    # Append i5 and i7 values based on the user selections
-    for i in range(total_cells):
-        well = selected_data[i]
-        well_row = well[0]  # Extract the letter (A, B, C, etc.)
-        well_number = int(well[1:])  # Extract the number (1, 2, etc.)
-
-        # Fetch the corresponding i5 value from the index
-        i5_value = f"{i5_row}{well_number}"  # e.g., if i5_row is H and well is A1, this will be H1
+# Populate the output_data based on selected wells
+for i in range(len(selected_data)):
+    well = selected_data[i]
+    if well not in st.session_state.removal_wells:  # Skip removed wells
+        well_row = well[0]
+        well_number = int(well[1:])
+        
+        # Fetch i5 value and i7 value (same logic as before)
+        i5_value = f"{i5_row}{well_number}"
         i5_row_data = index_df.loc[index_df['index'] == i5_value, ['i5-name', 'i5-index']].values[0]
-
-        # Append i7 values based on the i7 column selection
-        i7_value = f"{well_row}{i7_col}"  # e.g., if well is A1 and column is 12, this will be A12
+        
+        i7_value = f"{well_row}{i7_col}"
         i7_row_data = index_df.loc[index_df['index'] == i7_value, ['i7-name', 'i7-index']].values[0]
-
-        # Create a row in the output
+        
+        # Append the output row for horizontal display
         output_data.append({
             "Well": well,
             "i7-name": i7_row_data[0],
@@ -110,61 +153,59 @@ if st.session_state.end_cell:
             "i5-index": i5_row_data[1]
         })
 
-    # Create a DataFrame from the output data
-    output_df = pd.DataFrame(output_data)
+# Generate timestamp in the format day_month_year_min_sec
+timestamp = datetime.datetime.now().strftime("%D_%M%S")
 
-    # Generate timestamp in the format day_month_year_min_sec
-    timestamp = datetime.datetime.now().strftime("%D_%M%S")
+# Create the horizontal output DataFrame
+output_df = pd.DataFrame(output_data)
 
-    # Add download button for the horizontal output
-    st.download_button(
-        label="Download Horizontal Output as CSV",
-        data=output_df.to_csv(index=False),
-        file_name=f"horizontal_output_{timestamp}.csv",
-        mime="text/csv"
-    )
-    # Display the DataFrame in horizontal format
-    st.subheader("→ Horizontal Output")
-    st.write(output_df)
+# Now handle vertical output data, using similar logic
+vertical_output_data = []
+rows = [f"{chr(65 + r)}{c + 1}" for c in range(12) for r in range(8)]  # All wells in vertical format
 
-    # Create a DataFrame for vertical output with the specified order
-    vertical_output_data = []
-    rows = [f"{chr(65 + r)}{c + 1}" for c in range(12) for r in range(8)]
-    
-    # Populate the vertical output data using the same logic
-    for well in rows:
-        if well in selected_data:
-            well_row = well[0]
-            well_number = int(well[1:])
-            
-            # Fetch the corresponding i5 value from the index
-            i5_value = f"{i5_row}{well_number}"
-            i5_row_data = index_df.loc[index_df['index'] == i5_value, ['i5-name', 'i5-index']].values[0]
-            
-            # Fetch the corresponding i7 value from the index
-            i7_value = f"{well_row}{i7_col}"
-            i7_row_data = index_df.loc[index_df['index'] == i7_value, ['i7-name', 'i7-index']].values[0]
-            
-            # Append to vertical output data
-            vertical_output_data.append({
-                "Well": well,
-                "i7-name": i7_row_data[0],
-                "i7-index": i7_row_data[1],
-                "i5-name": i5_row_data[0],
-                "i5-index": i5_row_data[1]
-            })
+for well in rows:
+    if well in selected_data and well not in st.session_state.removal_wells:  # Skip removed wells
+        well_row = well[0]
+        well_number = int(well[1:])
+        
+        # Fetch i5 value and i7 value (same logic as before)
+        i5_value = f"{i5_row}{well_number}"
+        i5_row_data = index_df.loc[index_df['index'] == i5_value, ['i5-name', 'i5-index']].values[0]
+        
+        i7_value = f"{well_row}{i7_col}"
+        i7_row_data = index_df.loc[index_df['index'] == i7_value, ['i7-name', 'i7-index']].values[0]
+        
+        # Add to the vertical output data
+        vertical_output_data.append({
+            "Well": well,
+            "i7-name": i7_row_data[0],
+            "i7-index": i7_row_data[1],
+            "i5-name": i5_row_data[0],
+            "i5-index": i5_row_data[1]
+        })
 
-    # Create a DataFrame for vertical output
-    vertical_output_df = pd.DataFrame(vertical_output_data)
-    
-    # Add download button for the vertical output
-    st.download_button(
-        label="Download Vertical Output as CSV",
-        data=vertical_output_df.to_csv(index=False),
-        file_name=f"vertical_output_{timestamp}.csv",
-        mime="text/csv"
-    )
+# Create the vertical output DataFrame
+vertical_output_df = pd.DataFrame(vertical_output_data)
 
-    # Display the DataFrame in vertical format
-    st.subheader("↓ Vertical Output")
-    st.write(vertical_output_df)
+# Add download button for horizontal output CSV
+st.download_button(
+    label="Download Horizontal Output as CSV",
+    data=output_df.to_csv(index=False),
+    file_name=f"horizontal_output_{timestamp}.csv",
+    mime="text/csv"
+)
+# Display the horizontal output data frame
+st.write("### Horizontal Output →")
+st.dataframe(output_df)
+
+# Add download button for vertical output CSV
+st.download_button(
+    label="Download Vertical Output as CSV",
+    data=vertical_output_df.to_csv(index=False),
+    file_name=f"vertical_output_{timestamp}.csv",
+    mime="text/csv"
+)
+
+# Display the vertical output data frame
+st.write("### Vertical Output ↓")
+st.dataframe(vertical_output_df)
