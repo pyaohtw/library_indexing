@@ -70,6 +70,7 @@ st.title("App Summary")
 st.write("This app is designed to assign i7 and i5 indices to your samples in a 96-well format.")
 st.title("Well Selector")
 st.write("Select a well to generate a matrix from A1 to the selected well.")
+st.write("If the full data matrix isn't visible, adjust or drag the sidebar to view the entire output.")
 
 # Create buttons for each cell in a grid format
 for i in range(df.shape[0]):
