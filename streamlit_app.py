@@ -90,7 +90,7 @@ if st.session_state.end_cell:
     selected_data = get_selection(st.session_state.end_cell)  # Ensure selected_data is defined
 
 # Remove Wells from Output (Multiple Selection)
-st.subheader("Remove Wells from Output ("Optional")
+st.subheader("Remove Wells from Output (Optional)")
 st.write("Select wells to exclude from the output. To undo changes, simply refresh the page.")
 
 for i in range(df.shape[0]):
