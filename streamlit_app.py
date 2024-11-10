@@ -73,7 +73,7 @@ st.title("App Summary")
 st.write("This app is designed to assign i7 and i5 indices to your samples in a 96-well format.")
 st.title("Well Selector")
 st.write("Select a well to generate a matrix from A1 to the selected well.")
-st.write("If the full data matrix isn't visible, adjust or drag the sidebar to view the entire output.")
+st.write("Your selected data matrix is displayed in the sidebar. If you don't see the full matrix, adjust the sidebar's size or position for optimal viewing.")
 
 # Create buttons for each cell in a grid format
 for i in range(df.shape[0]):
@@ -90,8 +90,8 @@ if st.session_state.end_cell:
     selected_data = get_selection(st.session_state.end_cell)  # Ensure selected_data is defined
 
 # Remove Wells from Output (Multiple Selection)
-st.title("Remove Wells from Output")
-st.write("Select wells to remove from the output. If you make an unintended removal, you can refresh the page and start over.")
+st.subheader("Remove Wells from Output ("Optional")
+st.write("Select wells to exclude from the output. To undo changes, simply refresh the page.")
 
 for i in range(df.shape[0]):
     cols = st.columns(df.shape[1], gap="small")
