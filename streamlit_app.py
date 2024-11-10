@@ -53,6 +53,9 @@ if 'i7_col' not in st.session_state:
 if 'removal_wells' not in st.session_state:
     st.session_state.removal_wells = []
 
+# Initialize selected_data as an empty list if end_cell is not yet selected
+selected_data = []
+
 # Function to get the selection based on the end cell
 def get_selection(end_cell):
     row_index = ord(end_cell[0]) - 65  # Convert letter to row index (A=0, B=1, ..., H=7)
