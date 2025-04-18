@@ -2,9 +2,6 @@ import streamlit as st
 import pandas as pd
 import datetime
 
-# Load the index data from the CSV file
-index_df = pd.read_csv('index.csv')
-
 # Create a sample dataframe for well structure (8 rows x 12 columns)
 data = [[f'{chr(65 + row)}{col + 1}' for col in range(12)] for row in range(8)]
 df = pd.DataFrame(data, columns=[f'A{i + 1}' for i in range(12)])
@@ -126,6 +123,21 @@ with st.sidebar:
     # Wrap the matrix in a div with id="matrix-container"
     st.markdown(f'<div id="matrix-container">{final_matrix.to_html(escape=False, index=False, header=False)}</div>', unsafe_allow_html=True)
 
+# Select the index files to use
+st.subheader("Select Index File")
+
+# Radio button to choose index file
+use_reverse_complement = st.radio(
+    "Use reverse complement i7 index file?",
+    ("No", "Yes"),
+    index=0  # Default to "No"
+)
+
+# Load the appropriate index file based on selection
+index_file = 'index-i7-RC.csv' if use_reverse_complement == "Yes" else 'index.csv'
+index_df = pd.read_csv(index_file)
+
+st.write(f"Using index file: `{index_file}`")
 # Dropdowns for i5 and i7 selections
 st.subheader("Select i7 Column and i5 Row")
 i7_col = st.selectbox("Select i7 Column", list(range(1, 13)))
